@@ -10,7 +10,7 @@ from pathlib import Path
 def get_element_geometry(model: ifcopenshell.file) -> dict:
     try:
         settings = ifcopenshell.geom.settings()
-        settings.set(settings.SEW_SHELLS, True)
+        settings.set(settings.USE_WORLD_COORDS, True)
 
         num_cores = multiprocessing.cpu_count()
         iterator = ifcopenshell.geom.iterator(settings, model, num_cores)
