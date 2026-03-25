@@ -10,7 +10,13 @@ from pathlib import Path
 def get_element_geometry(model: ifcopenshell.file) -> dict:
     try:
         settings = ifcopenshell.geom.settings()
-        settings.set(settings.USE_WORLD_COORDS, True) 
+        settings.set("use-world-coords", True)
+        settings.set("boolean-attempt-2d", True)
+        settings.set("weld-vertices", True)
+        settings.set("mesher-linear-deflection", 0.3)
+        settings.set("mesher-angular-deflection", 0.5)
+        #Для Brep геометрии
+        #settings.set("iterator-output", ifcopenshell.ifcopenshell_wrapper.SERIALIZED)
 
         num_cores = multiprocessing.cpu_count()
         iterator = ifcopenshell.geom.iterator(settings, model, num_cores)
