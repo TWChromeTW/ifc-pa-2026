@@ -28,9 +28,26 @@ def get_element_geometry(model: ifcopenshell.file) -> dict:
         settings = ifcopenshell.geom.settings()
         settings.set("use-world-coords", True)
         settings.set("iterator-output", ifcopenshell.ifcopenshell_wrapper.SERIALIZED)
+        settings.set("boolean-attempt-2d", True)
+
+        exclude_classes = [
+            "IfcSpace",
+            "IfcOpeningElement",
+            "IfcAnnotation",
+            "IfcGrid"
+        ]
+
+        elements_to_exclude = []
+        for cls_name in exclude_classes:
+            elements_to_exclude.extend(model.by_type(cls_name))
 
         num_cores = multiprocessing.cpu_count()
-        iterator = ifcopenshell.geom.iterator(settings, model, num_cores)
+        iterator = ifcopenshell.geom.iterator(
+            settings,
+            model,
+            num_threads=num_cores,
+            exclude=elements_to_exclude
+        )
 
         if not iterator.initialize():
             return {"error": "The model has no 3D geometry or the file is corrupted."}
