@@ -1,7 +1,5 @@
 import ifcopenshell
 import ifcopenshell.geom
-import numpy as np
-import pyvista as pv
 import tempfile
 import multiprocessing
 from pathlib import Path
