@@ -9,12 +9,12 @@ os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
 import sys
 import ifcopenshell
 
-from PyQt6.QtWidgets import ( 
-    QApplication, 
-    QWidget, 
-    QVBoxLayout, 
+from PyQt6.QtWidgets import (
+    QApplication,
+    QWidget,
+    QVBoxLayout,
     QTreeWidget,
-    QMainWindow, 
+    QMainWindow,
     QSplitter,
     QTextEdit,
     QFileDialog,
@@ -40,26 +40,25 @@ class GeometryWorker(QThread):
         # Всё, что находится внутри метода run(), выполняется в отдельном потоке!
         # Сюда мы переносим вашу тяжелую функцию
         geom_data = get_element_geometry(self.model)
-        
         # Когда генерация закончена, отправляем данные обратно в главное окно
         self.finished_signal.emit(geom_data)
 
 class MainWindow(QMainWindow):
     def __on_geometry_ready(self, geom_data):
         """Этот метод вызовется автоматически, когда фоновый поток закончит расчеты"""
-        
+
         if "error" in geom_data:
             self.bottom_panel.append(f"Ошибка 3D: {geom_data['error']}")
         else:
             vtm_path = geom_data["dir_path"]
             elements_count = geom_data["elements_count"]
-            
+
             self.bottom_panel.append(f"Геометрия создана! Элементов: {elements_count}")
             self.bottom_panel.append(f"Файл геометрии: {vtm_path}")
-            
+
             # 4. ОТПРАВЛЯЕМ ФАЙЛ ВО ВЬЮПОРТ ДЛЯ ОТРИСОВКИ
             self.viewport.load_model(vtm_path)
-            
+
             self.bottom_panel.append("Успех: Модель загружена и отрисована!")
     def __init__(self):
         # parent's constructor (QMainWindow)
@@ -153,7 +152,7 @@ class MainWindow(QMainWindow):
 
         open_action = QAction("Open", self)
         exit_action = QAction("Exit", self)
-        
+
 
         exit_action.triggered.connect(self.close)
         open_action.triggered.connect(self.__open_file)
@@ -166,7 +165,7 @@ class MainWindow(QMainWindow):
         geometry = self.settings.value("geometry")
         if geometry:
             self.restoreGeometry(geometry)
-        
+
         v_state = self.settings.value("v_splitter_state")
         if v_state:
             self.v_splitter.restoreState(v_state)
@@ -193,7 +192,6 @@ class MainWindow(QMainWindow):
             "IFC Files (*.ifc);;All Files (*)"
         )
 
-
         if file_path:
             self.bottom_panel.append(f"File selected: {file_path}")
 
@@ -204,23 +202,18 @@ class MainWindow(QMainWindow):
                 self.bottom_panel.append("Чтение IFC файла...")
                 QApplication.processEvents() # Обновляем UI, чтобы не завис
                 model = ifcopenshell.open(file_path)
-
                 # 2. Строим дерево
                 self.bottom_panel.append("Построение дерева проекта...")
                 QApplication.processEvents()
                 hierarchy_list = get_project_hierarchy(model)
                 self.__build_tree_ui(hierarchy_list, self.tree)
                 self.tree.expandAll()
-
                 # 3. Извлекаем 3D-геометрию В ФОНОВОМ ПОТОКЕ
                 self.bottom_panel.append("Генерация 3D геометрии запущена в фоне (интерфейс не зависнет!)...")
-                
                 # Создаем воркер и передаем ему модель
                 self.worker = GeometryWorker(model)
-                
                 # Подключаем сигнал успешного завершения к новому методу
                 self.worker.finished_signal.connect(self.__on_geometry_ready)
-                
                 # ЗАПУСКАЕМ ПОТОК
                 self.worker.start()
 
