@@ -84,12 +84,7 @@ class MainWindow(QMainWindow):
         # load settings (AFTER BUILD ALL WIDGETS)
         self.__restore_settings()
 
-        self.setStyleSheet("""
-            QWidget {
-                background-color: palette(Window);
-                color: palette(WindowText);
-            }
-        """)
+        self.setStyleSheet(self.themes["Dark"])
 
     def __init_ui(self):
         # two main widget
@@ -158,6 +153,8 @@ class MainWindow(QMainWindow):
 
         self.property_tree.itemChanged.connect(self.__on_property_edited)
 
+        self.viewport.element_selected_signal.connect(self.__on_viewport_element_selected)
+
     def __build_tree_ui(self, node_list:list, parent_item):
         for node in node_list:
             display_text = f"[{node['Type']}] {node['Name']}"
@@ -178,61 +175,115 @@ class MainWindow(QMainWindow):
         settings_menu = menu_bar.addMenu("Settings")
 
         theme_menu = settings_menu.addMenu("Theme")
-        
+
         self.themes = {
-            "Light": "background-color: #f0f0f0; color: black;",
+            "Light": """
+                QMainWindow, QWidget {
+                    background-color: #f3f3f3; /* Светло-серый фон приложения */
+                    color: #333333; /* Темно-серый текст для хорошей читаемости */
+                }
+
+                QTreeView, QTextEdit, QTableView {
+                    background-color: #ffffff; /* Чисто белый фон для данных */
+                    border: 1px solid #cccccc; /* Светлые границы */
+                    gridline-color: #cccccc;
+                }
+
+                QHeaderView::section {
+                    background-color: #e8e8e8; /* Слегка выделенный фон заголовков */
+                    color: #333333;
+                    border: 1px solid #cccccc;
+                    padding: 2px;
+                }
+
+                QPushButton {
+                    background-color: #e4e4e4;
+                    color: #333333;
+                    border: 1px solid #cccccc;
+                    border-radius: 4px;
+                    padding: 4px;
+                }
+
+                QPushButton:hover {
+                    background-color: #ebebeb;
+                    border: 1px solid #b3b3b3;
+                }
+
+                QPushButton:pressed {
+                    background-color: #dadada;
+                }
+
+                QScrollBar:vertical {
+                    border: none;
+                    background: #f3f3f3;
+                    width: 14px;
+                    margin: 0px 0px 0px 0px;
+                }
+                QScrollBar::handle:vertical {
+                    background: #c1c1c1; /* Серый ползунок */
+                    min-height: 20px;
+                    border-radius: 7px;
+                }
+                QScrollBar::handle:vertical:hover {
+                    background: #a8a8a8; /* Более темный серый при наведении */
+                }
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                    border: none;
+                    background: none;
+                }
+            """,
             "Dark": """
                 QMainWindow, QWidget {
-                background-color: #1e1e1e; /* Темно-серый фон */
-                color: #d4d4d4; /* Светло-серый/белый текст */
-            }
+                    background-color: #1e1e1e; /* Темно-серый фон */
+                    color: #d4d4d4; /* Светло-серый/белый текст */
+                }
 
-            QTreeView, QTextEdit, QTableView {
-                background-color: #252526;
-                border: 1px solid #3c3c3c;
-                gridline-color: #3c3c3c;
-            }
+                QTreeView, QTextEdit, QTableView {
+                    background-color: #252526;
+                    border: 1px solid #3c3c3c;
+                    gridline-color: #3c3c3c;
+                }
 
-            QHeaderView::section {
-                background-color: #2d2d30;
-                color: #d4d4d4;
-                border: 1px solid #3c3c3c;
-            }
+                QHeaderView::section {
+                    background-color: #2d2d30;
+                    color: #d4d4d4;
+                    border: 1px solid #3c3c3c;
+                }
 
-            QPushButton {
-                background-color: #333333;
-                color: #ffffff;
-                border: 1px solid #555555;
-                border-radius: 4px;
-            }
+                QPushButton {
+                    background-color: #333333;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    border-radius: 4px;
+                }
 
-            QPushButton:hover {
-                background-color: #444444;
-                border: 1px solid #888888;
-            }
+                QPushButton:hover {
+                    background-color: #444444;
+                    border: 1px solid #888888;
+                }
 
-            QPushButton:pressed {
-                background-color: #222222;
-            }
-            
-            QScrollBar:vertical {
-                border: none;
-                background: #1e1e1e;
-                width: 14px;
-                margin: 0px 0px 0px 0px;
-            }
-            QScrollBar::handle:vertical {
-                background: #424242;
-                min-height: 20px;
-                border-radius: 7px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #4f4f4f;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                border: none;
-                background: none;
-            }
+                QPushButton:pressed {
+                    background-color: #222222;
+                }
+
+                QScrollBar:vertical {
+                    border: none;
+                    background: #1e1e1e;
+                    width: 14px;
+                    margin: 0px 0px 0px 0px;
+                }
+                QScrollBar::handle:vertical {
+                    background: #424242;
+                    min-height: 20px;
+                    border-radius: 7px;
+                }
+                QScrollBar::handle:vertical:hover {
+                    background: #4f4f4f;
+                }
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                    border: none;
+                    background: none;
+                }
             """,
         }
 
@@ -317,6 +368,8 @@ class MainWindow(QMainWindow):
 
         if not hasattr(self, 'model'):
             return
+
+        self.viewport.select_and_rotate(global_id)
         
         self.current_global_id = global_id
 
@@ -460,13 +513,42 @@ class MainWindow(QMainWindow):
         if "error" in geom_data:
             self.bottom_panel.append(f"Ошибка 3D: {geom_data['error']}")
         else:
-            vtm_path = geom_data["dir_path"]
+            brep_path = geom_data["dir_path"]
             elements_count = geom_data["elements_count"]
             
             self.bottom_panel.append(f"Геометрия создана! Элементов: {elements_count}")
             # Передаем файл во вьюпорт
-            self.viewport.load_model(vtm_path)
+            self.viewport.load_model(brep_path)
             self.bottom_panel.append("Успех: Модель загружена и отрисована!")
+
+    def __on_viewport_element_selected(self, global_id):
+        self.bottom_panel.append(f"Выбран элемент из 3D: {global_id}")
+
+        target_item = None
+        for i in range(self.tree.topLevelItemCount()):
+            top_item = self.tree.topLevelItem(i)
+            if top_item.data(0, Qt.ItemDataRole.UserRole) == global_id:
+                target_item = top_item
+                break
+            target_item = self.__find_item_by_guid(top_item, global_id)
+            if target_item:
+                break
+
+        if target_item:
+            self.tree.setCurrentItem(target_item)
+            self.tree.scrollToItem(target_item)
+            self.__on_tree_double_click(target_item, 0)
+
+    def __find_item_by_guid(self, parent_item, guid):
+        """Рекурсивный поиск элемента по дереву"""
+        for i in range(parent_item.childCount()):
+            child = parent_item.child(i)
+            if child.data(0, Qt.ItemDataRole.UserRole) == guid:
+                return child
+            found = self.__find_item_by_guid(child, guid)
+            if found:
+                return found
+        return None
 
     def closeEvent(self, event):
         """this method called before close app"""
